@@ -9,11 +9,41 @@ const HomeScreen = () => {
   const [notes, setNotes] = useState([]);
   const navigation = useNavigation();
   const [isMenuVisible, setMenuVisible] = useState(false);
+  const [sortedNotes, setSortedNotes] = useState([]);
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [isSortVisible, setSortVisible] = useState(false);
   const isFocused = useIsFocused();
 
-  const menu = () => {
+  const toggleMenu = () => {
     setMenuVisible(!isMenuVisible);
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const toggleSortMenu = () => {
+    setSortVisible(!isSortVisible);
+  };
+
+
+  // const sortNotes = (order) => {
+  //   const sorted = sortedNotes.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  //   setSortOrder(order);
+  //   console.log("testinggg", order);
+  //   setSortedNotes(sorted);
+  //   console.log("helloWorldd", sorted);
+  // };
+
+  const sortNotes = (order, notesToSort) => {
+    const sortedCopy = [...notesToSort].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return order === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    setSortOrder(order);
+    setSortedNotes(sortedCopy);
+  };
+
+  useEffect(() => {
 
     const fetchNotes = async () => {
       try {
@@ -21,47 +51,64 @@ const HomeScreen = () => {
         if (storedNotes) {
           const parsedNotes = JSON.parse(storedNotes);
           setNotes(parsedNotes);
-          console.log('Notes fetched:', parsedNotes);
-
+          sortNotes(sortOrder, parsedNotes);
         }
       } catch (error) {
         console.error('Error fetching notes:', error);
       }
-  };
+    };
+    if (isFocused) {
+      fetchNotes();
+    }
+  }, [isFocused, sortOrder]);
 
-    useEffect(() => {
-      if (isFocused) {
-        fetchNotes();
-      }
-    }, [isFocused]);
 
-  navigation.setOptions({
-    // eslint-disable-next-line react/no-unstable-nested-components
-    headerLeft: () => (
-      <TouchableOpacity
-        style={{marginLeft: 10}}
-      >
-        <Image
-          source={categorie}
-          style={{width: 35, height: 35}}
-        />
-      </TouchableOpacity>
-    ),
-  });
+useEffect(() => {
+    navigation.setOptions({
+      // eslint-disable-next-line react/no-unstable-nested-components
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{marginLeft: 10}}
+        >
+          <Image
+            source={categorie}
+            style={{width: 35, height: 35}}
+          />
+        </TouchableOpacity>
+      ),
+    });
 
-  navigation.setOptions({
-    // eslint-disable-next-line react/no-unstable-nested-components
-    headerRight: () => (
-      <TouchableOpacity
-        style={{marginRight: 20}}
-      >
-        <Image
+    navigation.setOptions({
+      // eslint-disable-next-line react/no-unstable-nested-components
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={toggleSortMenu}
+          style={{ marginRight: 10 }}>
+        <Image 
           source={sort}
-          style={{width: 35, height: 35}}
-        />
+          style={{ width: 40, height: 40 }} />
       </TouchableOpacity>
     ),
   });
+}, [isSortVisible, navigation, toggleSortMenu]);
+
+
+const renderItem = ({ item }) => (
+  <TouchableOpacity
+    onPress={() =>
+      navigation.navigate('Update Note', {
+        title: item.title,
+        description: item.description,
+        date: item.date,
+      })
+    }
+    style={styles.noteItem}
+  >
+    <Text style={styles.titleText}>{item.title}</Text>
+    <Text style={styles.descriptionText}>{item.description}</Text>
+    <Text style={styles.dateText}>{item.date}</Text>
+  </TouchableOpacity>
+);
 
   return (
     <View style={styles.container}>
@@ -70,32 +117,18 @@ const HomeScreen = () => {
           placeholder="Search Notes"
         />
 
-      <View style={styles.flatListContainer}>
+        <View style={styles.flatListContainer}>
         <FlatList
-          data={notes}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-             onPress={() => navigation.navigate('Update Note',
-             {
-             title: item.title,
-             description: item.description,
-             date: item.date,
-             })
-            }
-            style={styles.noteItem}
-          >
-            <Text style={styles.titleText}>{item.title}</Text>
-            <Text style={styles.descriptionText}>{item.description}</Text>
-            <Text style={styles.dateText}>{item.date}</Text>
-          </TouchableOpacity>
-          )}
-          numColumns={2}
+           data={isSortVisible ? sortedNotes : notes}
+           renderItem={renderItem}
+           numColumns={2}
         />
-      </View>
+         </View>
+
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={menu}
+        onPress={toggleMenu}
       >
       <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
@@ -105,7 +138,7 @@ const HomeScreen = () => {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
-              menu();
+              toggleMenu();
               navigation.navigate('Add Note');
             }}
           >
@@ -115,7 +148,7 @@ const HomeScreen = () => {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
-              menu();
+              toggleMenu();
             }}
           >
             <Text style={styles.menuItemText}>Reminder</Text>
@@ -124,10 +157,35 @@ const HomeScreen = () => {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
-              menu();
+              toggleMenu();
+              navigation.navigate('ToDo List');
             }}
           >
             <Text style={styles.menuItemText}>ToDo List</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isSortVisible && (
+        <View style={styles.sortContainer}>
+          <TouchableOpacity
+            style={styles.sortItem}
+            onPress={() => {
+              sortNotes('asc', notes);
+              toggleSortMenu();
+            }}
+          >
+            <Text style={styles.sortItemText}>Ascending</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sortItem}
+            onPress={() => {
+              sortNotes('desc', notes);
+              toggleSortMenu();
+            }}
+          >
+            <Text style={styles.sortItemText}>Descending</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -212,12 +270,33 @@ const styles = {
   },
   menuItem: {
     padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   menuItemText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'black',
    },
+   sortContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: '#90ee90',
+    borderRadius: 10,
+    elevation: 15,
+    padding: 15,
+   },
+   sortItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  sortItemText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+  },
 };
 
 export default HomeScreen;

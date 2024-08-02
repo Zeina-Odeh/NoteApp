@@ -1,13 +1,14 @@
 /* eslint-disable prettier/prettier */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { backarrow } from '../Icons';
+import { backarrow, menu } from '../Icons';
 
 const UpdateNoteScreen = ({route, navigation}) => {
   const { title: initialTitle, description: initialDescription } = route.params;
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [isMenuVisible, setMenuVisible] = useState(false);
 
   const getCurrentDateTime = () => {
     const currentDateTime = new Date();
@@ -31,7 +32,7 @@ const UpdateNoteScreen = ({route, navigation}) => {
     }
   };
 
-
+useEffect(() => {
     navigation.setOptions({
       // eslint-disable-next-line react/no-unstable-nested-components
       headerLeft: () => (
@@ -57,11 +58,41 @@ const UpdateNoteScreen = ({route, navigation}) => {
         >
           <Image
             source={backarrow}
-            style={{ width: 35, height: 35 }}
+            style={{ width: 35, height: 35}}
           />
         </TouchableOpacity>
       ),
     });
+
+    navigation.setOptions({
+    // eslint-disable-next-line react/no-unstable-nested-components
+    headerRight: () => (
+      <TouchableOpacity
+        onPress={() => setMenuVisible(!isMenuVisible)}
+        style={{ marginRight: 10 }}
+      >
+        <Image
+          source={menu}
+          style={{ width: 40, height: 40 }}
+        />
+      </TouchableOpacity>
+    ),
+  });
+}, [navigation, isMenuVisible, saveChanges]);
+
+
+const DeleteNote = async () => {
+  try {
+    const existingNotes = await AsyncStorage.getItem('notes');
+    const parsedNotes = JSON.parse(existingNotes) || [];
+    const updatedNotes = parsedNotes.filter((note) => note.title !== initialTitle);
+    await AsyncStorage.setItem('notes', JSON.stringify(updatedNotes));
+    navigation.goBack();
+  } catch (error) {
+    console.error('Error deleting note:', error);
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -79,6 +110,28 @@ const UpdateNoteScreen = ({route, navigation}) => {
         multiline={true}
       />
       <Text style={styles.dateText}>{getCurrentDateTime()}</Text>
+
+      {isMenuVisible && (
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              DeleteNote();
+            }}
+          >
+            <Text style={styles.menuItemText}>Delete</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+
+            }}
+          >
+            <Text style={styles.menuItemText}>Archeive</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -97,11 +150,31 @@ const styles = StyleSheet.create({
   descriptionStyle: {
     fontSize: 20,
     alignItems: 'center',
+    //marginLeft: 80,
   },
   dateText: {
     fontSize: 16,
     color: 'gray',
     padding: 30,
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 25,
+    backgroundColor: '#90ee90',
+    borderRadius: 10,
+    elevation: 15,
+    padding: 15,
+  },
+  menuItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  menuItemText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
   },
 });
 

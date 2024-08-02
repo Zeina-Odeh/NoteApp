@@ -1,6 +1,8 @@
 /* eslint-disable prettier/prettier */
-import icon from './icon.jpg';
+import tick from './tick.png';
 import sort from './sort.png';
 import categorie from './categorie.png';
 import backarrow from './backarrow.png';
-export {icon, sort, categorie, backarrow};
+import menu from './menu.png';
+
+export {tick, sort, categorie, backarrow, menu};

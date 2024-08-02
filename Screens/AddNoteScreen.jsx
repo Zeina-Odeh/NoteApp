@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Image, StyleSheet, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { icon } from '../Icons';
+import { tick, backarrow } from '../Icons';
 
 const AddNoteScreen = () => {
   const [title, setTitle] = useState('');
@@ -11,10 +11,11 @@ const AddNoteScreen = () => {
   const navigation = useNavigation();
 
   const getCurrentDateTime = () => {
-    const currentDateTime = new Date();
-    return currentDateTime.toLocaleString();
+    const currentDateTime = new Date().toLocaleString();
+    return currentDateTime;
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const saveNote = async () => {
     try {
       const existingNotes = await AsyncStorage.getItem('notes');
@@ -30,6 +31,7 @@ const AddNoteScreen = () => {
     }
   };
 
+  useEffect(() => {
   navigation.setOptions({
     // eslint-disable-next-line react/no-unstable-nested-components
     headerRight: () => (
@@ -38,12 +40,28 @@ const AddNoteScreen = () => {
         style={{marginRight: 20}}
       >
         <Image
-          source={icon}
+          source={tick}
           style={{width: 35, height: 35}}
         />
       </TouchableOpacity>
     ),
   });
+
+  navigation.setOptions({
+    // eslint-disable-next-line react/no-unstable-nested-components
+    headerLeft: () => (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Home Screen')}
+        style={{ marginLeft: 20 }}
+      >
+        <Image
+          source={backarrow}
+          style={{ width: 35, height: 35 }}
+        />
+      </TouchableOpacity>
+    ),
+  });
+  },[navigation, saveNote]);
 
   return (
     <View style= {styles.containor}>
